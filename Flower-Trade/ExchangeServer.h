@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <atomic>
 #include "OrderBook.h"
+#include <fstream>
+#include <mutex>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -16,20 +18,18 @@ private:
     int listen_port;
     SOCKET main_socket; 
     
-    // Thread-safe order ID generator
     std::atomic<int> order_id_counter;
 
-    // The 5 Order Books
     std::unordered_map<std::string, std::unique_ptr<OrderBook>> order_books;
 
     bool boot_winsock(); 
-    
-    // The background worker function for each connected trader
+
     void handle_trader(SOCKET trader_socket);
 
-    // Helper to generate IDs
     std::string generate_order_id();
     std::string get_timestamp();
+    std::ofstream output_file;
+    std::mutex file_lock;
 
 public:
     ExchangeServer(int port);

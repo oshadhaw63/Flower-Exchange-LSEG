@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-// Connect to our Node Bridge
 const socket = io('http://localhost:3001');
 
 function App() {
   const [reports, setReports] = useState([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const tableEndRef = useRef(null);
+  
   const [order, setOrder] = useState({
     clientId: 'user_123',
     instrument: 'Rose',
@@ -15,83 +17,228 @@ function App() {
   });
 
   useEffect(() => {
-    // Listen for receipts coming back from the C++ engine
+    socket.on('connect', () => setIsConnected(true));
+    socket.on('disconnect', () => setIsConnected(false));
+
     socket.on('execution_report', (packet) => {
-      // Packet format: ord1|user_123|Rose|1|New|10|50.00||20260321-120000.000
       const [orderId, clId, inst, side, status, qty, price, reason, time] = packet.split('|');
       const newReport = { orderId, clId, inst, side, status, qty, price, reason, time };
-      
-      // Add the new receipt to the top of our table
-      setReports((prev) => [newReport, ...prev]);
+      setReports((prev) => [...prev, newReport]);
     });
 
-    return () => socket.off('execution_report');
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('execution_report');
+    };
   }, []);
 
-  const handleChange = (e) => {
+  // Auto-scroll to the newest order
+  useEffect(() => {
+    tableEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [reports]);
+
+  const handleInputChange = (e) => {
     setOrder({ ...order, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleManualSubmit = (e) => {
     e.preventDefault();
-    socket.emit('submit_order', order); // Send to Node Bridge
+    socket.emit('submit_order', order);
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const lines = event.target.result.split('\n').filter(line => line.trim() !== '');
+      const startIndex = lines[0].toLowerCase().includes('client') ? 1 : 0;
+      
+      for (let i = startIndex; i < lines.length; i++) {
+        const [clientId, instrument, side, qty, price] = lines[i].split(',');
+        if (clientId && instrument && side && qty && price) {
+          socket.emit('submit_order', { 
+            clientId: clientId.trim(), 
+            instrument: instrument.trim(), 
+            side: side.trim(), 
+            qty: qty.trim(), 
+            price: price.trim() 
+          });
+        }
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = null; // Reset file input
+  };
+
+  const downloadCSV = () => {
+    if (reports.length === 0) return;
+    const header = "Order ID,Client ID,Instrument,Side,Execution Status,Quantity,Price,Reason,Transaction Time\n";
+    const csvContent = reports.map(r => 
+      `${r.orderId},${r.clId},${r.inst},${r.side},${r.status},${r.qty},${r.price},${r.reason},${r.time}`
+    ).join('\n');
+
+    const blob = new Blob([header + csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'output.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'system-ui, sans-serif', backgroundColor: '#1e1e2e', color: '#cdd6f4', minHeight: '100vh' }}>
-      <h1>🌸 Flower Exchange Terminal</h1>
-      
-      {/* Order Submission Form */}
-      <div style={{ backgroundColor: '#313244', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
-        <h3>Submit New Order</h3>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '15px', alignItems: 'flex-end' }}>
-          <label>Client ID:<br/><input name="clientId" value={order.clientId} onChange={handleChange} style={inputStyle} /></label>
-          <label>Flower:<br/>
-            <select name="instrument" value={order.instrument} onChange={handleChange} style={inputStyle}>
-              <option>Rose</option><option>Lavender</option><option>Lotus</option><option>Tulip</option><option>Orchid</option>
-            </select>
-          </label>
-          <label>Side:<br/>
-            <select name="side" value={order.side} onChange={handleChange} style={inputStyle}>
-              <option value="1">Buy</option><option value="2">Sell</option>
-            </select>
-          </label>
-          <label>Quantity:<br/><input name="qty" type="number" step="10" value={order.qty} onChange={handleChange} style={inputStyle} /></label>
-          <label>Price ($):<br/><input name="price" type="number" step="0.01" value={order.price} onChange={handleChange} style={inputStyle} /></label>
-          <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#89b4fa', color: '#11111b', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-            SEND ORDER
-          </button>
-        </form>
-      </div>
+    <div style={styles.container}>
+      {/* Header */}
+      <header style={styles.header}>
+        <h1 style={styles.title}>🌸 Institutional Flower Exchange</h1>
+        <div style={styles.statusBadge}>
+          <span style={{ color: isConnected ? '#10b981' : '#ef4444', marginRight: '8px' }}>●</span>
+          {isConnected ? 'Engine Connected' : 'Disconnected'}
+        </div>
+      </header>
 
-      {/* Execution Reports Table */}
-      <div style={{ backgroundColor: '#313244', padding: '20px', borderRadius: '8px' }}>
-        <h3>Live Execution Reports</h3>
-        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid #585b70' }}>
-              <th>Order ID</th><th>Flower</th><th>Side</th><th>Status</th><th>Qty</th><th>Price</th><th>Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reports.map((r, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid #45475a', color: r.side === '1' ? '#a6e3a1' : '#f38ba8' }}>
-                <td style={{ padding: '8px 0' }}>{r.orderId}</td>
-                <td>{r.inst}</td>
-                <td>{r.side === '1' ? 'Buy' : 'Sell'}</td>
-                <td style={{ fontWeight: 'bold' }}>{r.status}</td>
-                <td>{r.qty}</td>
-                <td>${r.price}</td>
-                <td>{r.time}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div style={styles.dashboard}>
+        {/* Left Column: Controls */}
+        <div style={styles.controlPanel}>
+          
+          {/* Manual Order Form */}
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>Manual Order Entry</h3>
+            <form onSubmit={handleManualSubmit} style={styles.form}>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Client ID</label>
+                <input name="clientId" value={order.clientId} onChange={handleInputChange} style={styles.input} />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Instrument</label>
+                <select name="instrument" value={order.instrument} onChange={handleInputChange} style={styles.input}>
+                  <option>Rose</option><option>Lavender</option><option>Lotus</option><option>Tulip</option><option>Orchid</option>
+                </select>
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Side</label>
+                <select name="side" value={order.side} onChange={handleInputChange} style={styles.input}>
+                  <option value="1">Buy (1)</option><option value="2">Sell (2)</option>
+                </select>
+              </div>
+              <div style={styles.row}>
+                <div style={{...styles.inputGroup, flex: 1}}>
+                  <label style={styles.label}>Qty</label>
+                  <input name="qty" type="number" value={order.qty} onChange={handleInputChange} style={styles.input} />
+                </div>
+                <div style={{...styles.inputGroup, flex: 1}}>
+                  <label style={styles.label}>Price ($)</label>
+                  <input name="price" type="number" step="0.01" value={order.price} onChange={handleInputChange} style={styles.input} />
+                </div>
+              </div>
+              <button type="submit" style={order.side === '1' ? styles.buyBtn : styles.sellBtn}>
+                SUBMIT {order.side === '1' ? 'BUY' : 'SELL'} ORDER
+              </button>
+            </form>
+          </div>
+
+          {/* Bulk Upload Form */}
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>Bulk Order Upload</h3>
+            <p style={styles.subtext}>Upload a CSV file (Client ID, Instrument, Side, Qty, Price)</p>
+            <input type="file" accept=".csv" onChange={handleFileUpload} style={styles.fileInput} />
+          </div>
+
+          {/* Actions */}
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>Data Export</h3>
+            <button onClick={downloadCSV} style={styles.exportBtn}>
+              Download output.csv
+            </button>
+          </div>
+
+        </div>
+
+        {/* Right Column: Live Data Table */}
+        <div style={styles.tablePanel}>
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>Live Execution Reports ({reports.length})</h3>
+            <div style={styles.tableContainer}>
+              <table style={styles.table}>
+                <thead style={styles.thead}>
+                  <tr>
+                    <th style={styles.th}>Order ID</th>
+                    <th style={styles.th}>Client</th>
+                    <th style={styles.th}>Asset</th>
+                    <th style={styles.th}>Side</th>
+                    <th style={styles.th}>Status</th>
+                    <th style={styles.th}>Qty</th>
+                    <th style={styles.th}>Price</th>
+                    <th style={styles.th}>Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reports.map((r, i) => (
+                    <tr key={i} style={styles.tr}>
+                      <td style={styles.td}>{r.orderId}</td>
+                      <td style={styles.td}>{r.clId}</td>
+                      <td style={{...styles.td, fontWeight: 'bold'}}>{r.inst}</td>
+                      <td style={{...styles.td, color: r.side === '1' ? '#10b981' : '#ef4444'}}>
+                        {r.side === '1' ? 'BUY' : 'SELL'}
+                      </td>
+                      <td style={styles.td}>
+                        <span style={getStatusStyle(r.status)}>{r.status}</span>
+                      </td>
+                      <td style={styles.td}>{r.qty}</td>
+                      <td style={styles.td}>${r.price}</td>
+                      <td style={{...styles.td, color: '#94a3b8', fontSize: '0.85rem'}}>{r.time}</td>
+                    </tr>
+                  ))}
+                  <tr ref={tableEndRef} />
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid #6c7086', backgroundColor: '#181825', color: '#cdd6f4', marginTop: '5px' };
+// Styling Dictionary
+const getStatusStyle = (status) => {
+  const base = { padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' };
+  if (status === 'New') return { ...base, backgroundColor: '#3b82f633', color: '#60a5fa' };
+  if (status === 'Fill') return { ...base, backgroundColor: '#10b98133', color: '#34d399' };
+  if (status === 'Pfill') return { ...base, backgroundColor: '#f59e0b33', color: '#fbbf24' };
+  if (status === 'Rejected') return { ...base, backgroundColor: '#ef444433', color: '#f87171' };
+  return base;
+};
+
+const styles = {
+  container: { minHeight: '100vh', backgroundColor: '#0f172a', color: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 30px', backgroundColor: '#1e293b', borderBottom: '1px solid #334155' },
+  title: { margin: 0, fontSize: '1.5rem', fontWeight: '600', color: '#e2e8f0' },
+  statusBadge: { backgroundColor: '#0f172a', padding: '6px 12px', borderRadius: '20px', fontSize: '0.9rem', fontWeight: '500', border: '1px solid #334155' },
+  dashboard: { display: 'flex', gap: '20px', padding: '20px 30px', height: 'calc(100vh - 80px)' },
+  controlPanel: { flex: '0 0 320px', display: 'flex', flexDirection: 'column', gap: '20px' },
+  tablePanel: { flex: '1', display: 'flex', flexDirection: 'column' },
+  card: { backgroundColor: '#1e293b', borderRadius: '10px', padding: '20px', border: '1px solid #334155', display: 'flex', flexDirection: 'column' },
+  cardTitle: { margin: '0 0 15px 0', fontSize: '1.1rem', color: '#cbd5e1' },
+  subtext: { margin: '0 0 15px 0', fontSize: '0.85rem', color: '#94a3b8' },
+  form: { display: 'flex', flexDirection: 'column', gap: '12px' },
+  row: { display: 'flex', gap: '10px' },
+  inputGroup: { display: 'flex', flexDirection: 'column', gap: '4px' },
+  label: { fontSize: '0.85rem', color: '#94a3b8', fontWeight: '500' },
+  input: { padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#f8fafc', fontSize: '0.95rem', outline: 'none' },
+  fileInput: { color: '#94a3b8', fontSize: '0.9rem' },
+  buyBtn: { padding: '12px', backgroundColor: '#10b981', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' },
+  sellBtn: { padding: '12px', backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' },
+  exportBtn: { padding: '12px', backgroundColor: '#3b82f6', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' },
+  tableContainer: { overflowY: 'auto', flex: 1, paddingRight: '5px' },
+  table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left' },
+  thead: { position: 'sticky', top: 0, backgroundColor: '#1e293b', zIndex: 1 },
+  th: { padding: '12px 10px', borderBottom: '2px solid #334155', color: '#94a3b8', fontSize: '0.9rem', fontWeight: '600' },
+  tr: { borderBottom: '1px solid #334155' },
+  td: { padding: '12px 10px', fontSize: '0.95rem' }
+};
 
 export default App;

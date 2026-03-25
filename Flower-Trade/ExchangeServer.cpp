@@ -14,6 +14,11 @@ ExchangeServer::ExchangeServer(int port) {
     order_books["Lotus"] = std::make_unique<OrderBook>("Lotus");
     order_books["Tulip"] = std::make_unique<OrderBook>("Tulip");
     order_books["Orchid"] = std::make_unique<OrderBook>("Orchid");
+
+    output_file.open("output.csv", std::ios::out);
+    if (output_file.is_open()) {
+        output_file << "Order ID,Client ID,Instrument,Side,Execution Status,Quantity,Price,Reason,Transaction Time\n";
+    }
 }
 
 bool ExchangeServer::boot_winsock() {
@@ -53,45 +58,67 @@ std::string ExchangeServer::get_timestamp() {
 }
 
 void ExchangeServer::handle_trader(SOCKET trader_socket) {
-    char buffer[1024];
+    char buffer[4096]; // Increased buffer size
+    std::string incoming_data = ""; // Buffer to handle glued TCP packets
 
     while (true) {
-        memset(buffer, 0, 1024);
-        int bytes_read = recv(trader_socket, buffer, 1024, 0);
+        memset(buffer, 0, sizeof(buffer));
+        int bytes_read = recv(trader_socket, buffer, sizeof(buffer) - 1, 0);
         
         if (bytes_read <= 0) {
             std::cout << "Trader disconnected." << std::endl;
             break;
         }
 
-        std::string raw_packet(buffer, bytes_read);
-        std::stringstream ss(raw_packet);
-        std::string c_id, inst, side_str, qty_str, price_str;
-        
-        std::getline(ss, c_id, '|');
-        std::getline(ss, inst, '|');
-        std::getline(ss, side_str, '|');
-        std::getline(ss, qty_str, '|');
-        std::getline(ss, price_str, '|');
+        // Add new data to our buffer
+        incoming_data += std::string(buffer, bytes_read);
 
-        try {
-            int side = std::stoi(side_str);
-            int qty = std::stoi(qty_str);
-            double price = std::stod(price_str);
+        // Process every order until there are no more newlines
+        size_t pos;
+        while ((pos = incoming_data.find('\n')) != std::string::npos) {
+            std::string single_line = incoming_data.substr(0, pos);
+            incoming_data.erase(0, pos + 1); // Remove the processed line from buffer
 
-            Order new_order(c_id, inst, side, qty, price);
-            new_order.order_id = generate_order_id();
-            std::string current_time = get_timestamp();
+            if (single_line.empty() || single_line == "\r") continue;
 
-            std::vector<ExecutionReport> reports = order_books.at(inst)->process_incoming_order(new_order, current_time);
+            std::stringstream ss(single_line);
+            std::string c_id, inst, side_str, qty_str, price_str;
+            
+            std::getline(ss, c_id, '|');
+            std::getline(ss, inst, '|');
+            std::getline(ss, side_str, '|');
+            std::getline(ss, qty_str, '|');
+            std::getline(ss, price_str, '|');
 
-            for (const ExecutionReport& rep : reports) {
-                std::string receipt_packet = rep.serialize();
-                send(trader_socket, receipt_packet.c_str(), receipt_packet.size(), 0);
+            try {
+                int side = std::stoi(side_str);
+                int qty = std::stoi(qty_str);
+                double price = std::stod(price_str);
+
+                Order new_order(c_id, inst, side, qty, price);
+                new_order.order_id = generate_order_id();
+                std::string current_time = get_timestamp();
+
+                std::vector<ExecutionReport> reports = order_books.at(inst)->process_incoming_order(new_order, current_time);
+
+                for (const ExecutionReport& rep : reports) {
+                    std::string receipt_packet = rep.serialize();
+                    send(trader_socket, receipt_packet.c_str(), receipt_packet.size(), 0);
+
+                    std::lock_guard<std::mutex> lock(file_lock);
+                    if (output_file.is_open()) {
+                        std::string status_str = (rep.status == 0) ? "New" : (rep.status == 1) ? "Rejected" : (rep.status == 2) ? "Fill" : "Pfill";
+                        output_file << rep.order_id << "," << rep.client_order_id << "," << rep.instrument << "," 
+                                    << rep.side << "," << status_str << "," << rep.quantity << "," 
+                                    << std::fixed << std::setprecision(2) << rep.price << "," 
+                                    << rep.reason << "," << rep.transaction_time << "\n";
+                        output_file.flush();
+                    }
+                }
+            } catch (...) {
+                std::string err = "Error: Invalid packet format.\n";
+                send(trader_socket, err.c_str(), err.size(), 0);
             }
-        } catch (...) {
-            std::string err = "Error: Invalid packet format.\n";
-            send(trader_socket, err.c_str(), err.size(), 0);
         }
     }
     closesocket(trader_socket);
@@ -112,6 +139,9 @@ void ExchangeServer::wait_for_traders() {
 }
 
 ExchangeServer::~ExchangeServer() {
+    if (output_file.is_open()) {
+        output_file.close();
+    }
     closesocket(main_socket);
     WSACleanup();
 }
