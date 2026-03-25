@@ -7,9 +7,10 @@
 #include <vector>
 #include <unordered_map>
 #include <atomic>
-#include "OrderBook.h"
+#include <memory>
 #include <fstream>
 #include <mutex>
+#include "OrderBook.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -19,17 +20,15 @@ private:
     SOCKET main_socket; 
     
     std::atomic<int> order_id_counter;
-
     std::unordered_map<std::string, std::unique_ptr<OrderBook>> order_books;
 
-    bool boot_winsock(); 
-
-    void handle_trader(SOCKET trader_socket);
-
-    std::string generate_order_id();
-    std::string get_timestamp();
     std::ofstream output_file;
     std::mutex file_lock;
+
+    bool boot_winsock(); 
+    void handle_trader(SOCKET trader_socket);
+    std::string generate_order_id();
+    std::string get_timestamp();
 
 public:
     ExchangeServer(int port);

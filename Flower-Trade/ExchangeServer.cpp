@@ -2,7 +2,6 @@
 #include <sstream>
 #include <chrono>
 #include <iomanip>
-#include <memory>
 
 ExchangeServer::ExchangeServer(int port) {
     listen_port = port;
@@ -58,8 +57,8 @@ std::string ExchangeServer::get_timestamp() {
 }
 
 void ExchangeServer::handle_trader(SOCKET trader_socket) {
-    char buffer[4096]; // Increased buffer size
-    std::string incoming_data = ""; // Buffer to handle glued TCP packets
+    char buffer[4096];
+    std::string incoming_data = "";
 
     while (true) {
         memset(buffer, 0, sizeof(buffer));
@@ -70,16 +69,32 @@ void ExchangeServer::handle_trader(SOCKET trader_socket) {
             break;
         }
 
-        // Add new data to our buffer
         incoming_data += std::string(buffer, bytes_read);
 
-        // Process every order until there are no more newlines
         size_t pos;
         while ((pos = incoming_data.find('\n')) != std::string::npos) {
             std::string single_line = incoming_data.substr(0, pos);
-            incoming_data.erase(0, pos + 1); // Remove the processed line from buffer
+            incoming_data.erase(0, pos + 1);
 
             if (single_line.empty() || single_line == "\r") continue;
+
+            if (single_line == "RESET") {
+                order_books["Rose"] = std::make_unique<OrderBook>("Rose");
+                order_books["Lavender"] = std::make_unique<OrderBook>("Lavender");
+                order_books["Lotus"] = std::make_unique<OrderBook>("Lotus");
+                order_books["Tulip"] = std::make_unique<OrderBook>("Tulip");
+                order_books["Orchid"] = std::make_unique<OrderBook>("Orchid");
+                order_id_counter = 1;
+
+                std::lock_guard<std::mutex> lock(file_lock);
+                if (output_file.is_open()) output_file.close();
+                output_file.open("output.csv", std::ios::out | std::ios::trunc);
+                if (output_file.is_open()) {
+                    output_file << "Order ID,Client ID,Instrument,Side,Execution Status,Quantity,Price,Reason,Transaction Time\n";
+                }
+                std::cout << "Engine memory and OrderBooks wiped for new scenario." << std::endl;
+                continue;
+            }
 
             std::stringstream ss(single_line);
             std::string c_id, inst, side_str, qty_str, price_str;
