@@ -1,22 +1,33 @@
+#include "CSVReader.h"
+#include "CSVWriter.h"
+#include "Exchange.h"
 #include <iostream>
-#include "ExchangeServer.h"
+#include <chrono>
 
 int main() {
-    std::cout << "--- Starting High-Level Flower Exchange Server ---" << std::endl;
+    auto start_time = std::chrono::high_resolution_clock::now();
 
-    // 1. Define the port (8080 is the standard port for local development)
-    int port = 8080;
-    ExchangeServer exchange(port);
+    CSVReader reader("orders.csv");
+    std::vector<RawOrder> raw_orders = reader.read_orders();
 
-    // 2. Boot up the network and bind the port
-    if (exchange.boot_up()) {
-        // 3. Pause and wait for a trader to connect over TCP
-        exchange.wait_for_traders();
-    } else {
-        std::cerr << "CRITICAL FAILURE: Could not start the exchange server." << std::endl;
-        return 1;
+    Exchange engine;
+    std::vector<ExecutionReport> all_reports;
+    all_reports.reserve(raw_orders.size()); 
+
+    for (const auto& raw : raw_orders) {
+        std::vector<ExecutionReport> reports = engine.process_order(raw);
+        all_reports.insert(all_reports.end(), reports.begin(), reports.end());
     }
 
-    std::cout << "Server shutting down." << std::endl;
+    CSVWriter writer("execution_rep.csv");
+    writer.write_reports(all_reports);
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> ms = end_time - start_time;
+    
+    std::cout << "Successfully processed " << raw_orders.size() << " orders.\n";
+    std::cout << "Execution Time: " << ms.count() << " ms\n";
+    std::cout << "Results saved to execution_rep.csv\n";
+
     return 0;
 }
