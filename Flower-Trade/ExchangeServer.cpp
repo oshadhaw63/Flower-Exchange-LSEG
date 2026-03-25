@@ -105,34 +105,79 @@ void ExchangeServer::handle_trader(SOCKET trader_socket) {
             std::getline(ss, qty_str, '|');
             std::getline(ss, price_str, '|');
 
-            try {
-                int side = std::stoi(side_str);
-                int qty = std::stoi(qty_str);
-                double price = std::stod(price_str);
+            std::string reject_reason = "";
+            int side = 0;
+            int qty = 0;
+            double price = 0.0;
+            bool is_valid = true;
 
+            // 1. Missing Required Fields
+            if (c_id.empty() || inst.empty() || side_str.empty() || qty_str.empty() || price_str.empty()) {
+                is_valid = false;
+                reject_reason = "Missing required field";
+            }
+
+            // 2. Format Conversion
+            if (is_valid) {
+                try {
+                    side = std::stoi(side_str);
+                    qty = std::stoi(qty_str);
+                    price = std::stod(price_str);
+                } catch (...) {
+                    is_valid = false;
+                    reject_reason = "Invalid format";
+                }
+            }
+
+            // 3. Business Logic Validations
+            if (is_valid) {
+                if (inst != "Rose" && inst != "Lavender" && inst != "Lotus" && inst != "Tulip" && inst != "Orchid") {
+                    is_valid = false;
+                    reject_reason = "Invalid instrument";
+                } else if (side != 1 && side != 2) {
+                    is_valid = false;
+                    reject_reason = "Invalid side";
+                } else if (price <= 0) {
+                    is_valid = false;
+                    reject_reason = "Price must be greater than 0";
+                } else if (qty < 10 || qty > 1000) {
+                    is_valid = false;
+                    reject_reason = "Quantity outside range (10-1000)";
+                } else if (qty % 10 != 0) {
+                    is_valid = false;
+                    reject_reason = "Quantity not a multiple of 10";
+                }
+            }
+
+            std::vector<ExecutionReport> reports;
+            std::string current_time = get_timestamp();
+
+            // Route to engine OR generate rejection report
+            if (!is_valid) {
+                Order rejected_order(c_id, inst, side, qty, price);
+                rejected_order.order_id = generate_order_id();
+                ExecutionReport rej_rep(rejected_order, 1, current_time, reject_reason);
+                reports.push_back(rej_rep);
+            } else {
                 Order new_order(c_id, inst, side, qty, price);
                 new_order.order_id = generate_order_id();
-                std::string current_time = get_timestamp();
+                reports = order_books.at(inst)->process_incoming_order(new_order, current_time);
+            }
 
-                std::vector<ExecutionReport> reports = order_books.at(inst)->process_incoming_order(new_order, current_time);
+            // Send reports to UI and write to CSV
+            for (const ExecutionReport& rep : reports) {
+                std::string receipt_packet = rep.serialize();
+                send(trader_socket, receipt_packet.c_str(), receipt_packet.size(), 0);
 
-                for (const ExecutionReport& rep : reports) {
-                    std::string receipt_packet = rep.serialize();
-                    send(trader_socket, receipt_packet.c_str(), receipt_packet.size(), 0);
-
-                    std::lock_guard<std::mutex> lock(file_lock);
-                    if (output_file.is_open()) {
-                        std::string status_str = (rep.status == 0) ? "New" : (rep.status == 1) ? "Rejected" : (rep.status == 2) ? "Fill" : "Pfill";
-                        output_file << rep.order_id << "," << rep.client_order_id << "," << rep.instrument << "," 
-                                    << rep.side << "," << status_str << "," << rep.quantity << "," 
-                                    << std::fixed << std::setprecision(2) << rep.price << "," 
-                                    << rep.reason << "," << rep.transaction_time << "\n";
-                        output_file.flush();
-                    }
+                std::lock_guard<std::mutex> lock(file_lock);
+                if (output_file.is_open()) {
+                    std::string status_str = (rep.status == 0) ? "New" : (rep.status == 1) ? "Rejected" : (rep.status == 2) ? "Fill" : "Pfill";
+                    output_file << rep.order_id << "," << rep.client_order_id << "," << rep.instrument << "," 
+                                << rep.side << "," << status_str << "," << rep.quantity << "," 
+                                << std::fixed << std::setprecision(2) << rep.price << "," 
+                                << rep.reason << "," << rep.transaction_time << "\n";
+                    output_file.flush();
                 }
-            } catch (...) {
-                std::string err = "Error: Invalid packet format.\n";
-                send(trader_socket, err.c_str(), err.size(), 0);
             }
         }
     }

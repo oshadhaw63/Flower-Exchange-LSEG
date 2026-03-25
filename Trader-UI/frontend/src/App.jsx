@@ -33,7 +33,6 @@ function App() {
     };
   }, []);
 
-  // Auto-scroll to the newest order
   useEffect(() => {
     tableEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [reports]);
@@ -50,6 +49,9 @@ function App() {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    setReports([]);
+    socket.emit('reset_engine');
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -70,7 +72,7 @@ function App() {
       }
     };
     reader.readAsText(file);
-    e.target.value = null; // Reset file input
+    e.target.value = null; 
   };
 
   const downloadCSV = () => {
@@ -91,7 +93,6 @@ function App() {
 
   return (
     <div style={styles.container}>
-      {/* Header */}
       <header style={styles.header}>
         <h1 style={styles.title}>🌸 Institutional Flower Exchange</h1>
         <div style={styles.statusBadge}>
@@ -101,10 +102,8 @@ function App() {
       </header>
 
       <div style={styles.dashboard}>
-        {/* Left Column: Controls */}
         <div style={styles.controlPanel}>
           
-          {/* Manual Order Form */}
           <div style={styles.card}>
             <h3 style={styles.cardTitle}>Manual Order Entry</h3>
             <form onSubmit={handleManualSubmit} style={styles.form}>
@@ -140,14 +139,12 @@ function App() {
             </form>
           </div>
 
-          {/* Bulk Upload Form */}
           <div style={styles.card}>
             <h3 style={styles.cardTitle}>Bulk Order Upload</h3>
             <p style={styles.subtext}>Upload a CSV file (Client ID, Instrument, Side, Qty, Price)</p>
             <input type="file" accept=".csv" onChange={handleFileUpload} style={styles.fileInput} />
           </div>
 
-          {/* Actions */}
           <div style={styles.card}>
             <h3 style={styles.cardTitle}>Data Export</h3>
             <button onClick={downloadCSV} style={styles.exportBtn}>
@@ -157,7 +154,6 @@ function App() {
 
         </div>
 
-        {/* Right Column: Live Data Table */}
         <div style={styles.tablePanel}>
           <div style={styles.card}>
             <h3 style={styles.cardTitle}>Live Execution Reports ({reports.length})</h3>
@@ -203,7 +199,6 @@ function App() {
   );
 }
 
-// Styling Dictionary
 const getStatusStyle = (status) => {
   const base = { padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' };
   if (status === 'New') return { ...base, backgroundColor: '#3b82f633', color: '#60a5fa' };
@@ -221,7 +216,7 @@ const styles = {
   dashboard: { display: 'flex', gap: '20px', padding: '20px 30px', height: 'calc(100vh - 80px)' },
   controlPanel: { flex: '0 0 320px', display: 'flex', flexDirection: 'column', gap: '20px' },
   tablePanel: { flex: '1', display: 'flex', flexDirection: 'column' },
-  card: { backgroundColor: '#1e293b', borderRadius: '10px', padding: '20px', border: '1px solid #334155', display: 'flex', flexDirection: 'column' },
+  card: { backgroundColor: '#1e293b', borderRadius: '10px', padding: '20px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', height: '100%' },
   cardTitle: { margin: '0 0 15px 0', fontSize: '1.1rem', color: '#cbd5e1' },
   subtext: { margin: '0 0 15px 0', fontSize: '0.85rem', color: '#94a3b8' },
   form: { display: 'flex', flexDirection: 'column', gap: '12px' },
