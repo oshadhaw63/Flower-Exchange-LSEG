@@ -11,19 +11,22 @@ struct RawOrder {
 };
 
 class CSVReader {
-// Constructor
-    explicit CSVReader(const std::string& file);
-
-    // Copy constructor and assignment (Rule of Three)
-    CSVReader(const CSVReader& other);
-    CSVReader& operator=(const CSVReader& other);
-
-    // Destructor
-    ~CSVReader();
-
 private:
     std::string filename;
 public:
-    CSVReader(std::string file);
-    std::vector<RawOrder> read_orders();
+    // 1. Standard Constructor
+    explicit CSVReader(const std::string& file);
+
+    // 2. Copy Constructor
+    CSVReader(const CSVReader& other);
+
+    // 3. Copy Assignment Operator
+    CSVReader& operator=(const CSVReader& other);
+
+    // 4. Destructor
+    ~CSVReader();
+
+    std::vector<RawOrder> read_orders() const; // Notice the 'const' here too!
 };
+
+#endif

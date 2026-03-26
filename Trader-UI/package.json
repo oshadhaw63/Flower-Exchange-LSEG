@@ -1,13 +1,17 @@
 {
-  "name": "flower-exchange-platform",
+  "name": "trader-ui",
   "version": "1.0.0",
+  "main": "index.js",
   "scripts": {
-    "start:engine": "cd Flower-Trade && flower_gui.exe",
-    "start:bridge": "cd Trader-UI && node bridge.js",
-    "start:ui": "cd Trader-UI/frontend && npm run dev",
-    "dev": "concurrently -k \"npm run start:engine\" \"npm run start:bridge\" \"npm run start:ui\""
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
   "dependencies": {
-    "concurrently": "^8.2.2"
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
   }
 }

@@ -150,7 +150,10 @@ function App() {
           <div style={styles.card}>
             <h3 style={styles.cardTitle}>Bulk Order Upload</h3>
             <p style={styles.subtext}>Upload a CSV file (Client ID, Instrument, Side, Qty, Price)</p>
-            <input type="file" accept=".csv" onChange={handleFileUpload} style={styles.fileInput} />
+            <label htmlFor="csv-upload" style={styles.uploadBtn}>
+              CHOOSE FILE
+            </label>
+            <input id="csv-upload" type="file" accept=".csv" onChange={handleFileUpload} style={{ display: 'none' }} />
           </div>
 
           <div style={styles.card}>
@@ -241,7 +244,19 @@ const styles = {
   inputGroup: { display: 'flex', flexDirection: 'column', gap: '4px' },
   label: { fontSize: '0.85rem', color: '#94a3b8', fontWeight: '500' },
   input: { padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#f8fafc', fontSize: '0.95rem', outline: 'none' },
-  fileInput: { color: '#94a3b8', fontSize: '0.9rem' },
+  fileInput: { display: 'none' },
+  uploadBtn: {
+    display: 'inline-block',
+    padding: '12px',
+    backgroundColor: '#3b82f6',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    textAlign: 'center',
+    marginTop: '5px'
+  },
   buyBtn: { padding: '12px', backgroundColor: '#10b981', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' },
   sellBtn: { padding: '12px', backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' },
   exportBtn: { padding: '12px', backgroundColor: '#3b82f6', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' },

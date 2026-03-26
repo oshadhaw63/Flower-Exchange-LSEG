@@ -18,7 +18,7 @@ CSVReader& CSVReader::operator=(const CSVReader& other) {
 // Destructor
 CSVReader::~CSVReader() {}
 
-std::vector<RawOrder> CSVReader::read_orders() {
+std::vector<RawOrder> CSVReader::read_orders() const {
     std::vector<RawOrder> orders;
     std::ifstream file(filename);
     std::string line;
