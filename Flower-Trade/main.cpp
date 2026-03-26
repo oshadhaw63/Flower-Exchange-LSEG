@@ -1,8 +1,10 @@
 #include "CSVReader.h"
+#include "InterfaceReportWriter.h"
 #include "CSVWriter.h"
 #include "Exchange.h"
 #include <iostream>
 #include <chrono>
+#include <memory>
 
 int main() {
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -19,8 +21,8 @@ int main() {
         all_reports.insert(all_reports.end(), reports.begin(), reports.end());
     }
 
-    CSVWriter writer("execution_rep.csv");
-    writer.write_reports(all_reports);
+    std::unique_ptr<IReportWriter> writer = std::make_unique<CSVWriter>("execution_rep.csv");
+    writer->write_reports(all_reports);
 
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> ms = end_time - start_time;

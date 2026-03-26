@@ -21,7 +21,7 @@ private:
     std::mutex book_lock;
 
 public:
-    OrderBook(std::string inst);
+    explicit OrderBook(std::string inst);
     
     // Default constructor
     OrderBook();

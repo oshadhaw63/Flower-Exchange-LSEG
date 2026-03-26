@@ -1,4 +1,5 @@
 Order ID,Client ID,Instrument,Side,Execution Status,Quantity,Price,Reason,Transaction Time
-ord1,aa13,Rose,2,New,100,55,,20260326-100611.247
-ord2,aa14,Rose,2,New,100,45,,20260326-100611.250
-ord3,aa15,Rose,4,Rejected,200,45,Invalid side,20260326-100611.251
+ord1,aa13,Rose,2,New,100,55,,20260326-101618.359
+ord2,aa14,Rose,2,New,100,45,,20260326-101618.361
+ord3,aa15,Rose,1,Pfill,100,45,,20260326-101618.363
+ord2,aa14,Rose,2,Fill,100,45,,20260326-101618.363
