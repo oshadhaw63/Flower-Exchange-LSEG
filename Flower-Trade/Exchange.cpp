@@ -25,59 +25,32 @@ std::string Exchange::get_timestamp() {
     return ss.str();
 }
 
+#include "OrderValidator.h"
+#include <chrono>
+#include <iomanip>
+#include <sstream>
+
+Exchange::Exchange() {
+// ... existing code ...
 std::vector<ExecutionReport> Exchange::process_order(const RawOrder& raw) {
     std::vector<ExecutionReport> reports;
     std::string reject_reason = "";
-    int side = 0;
-    int qty = 0;
-    double price = 0.0;
-    bool is_valid = true;
+    
+    if (!OrderValidator::isValid(raw, reject_reason)) {
+        int side = 0;
+        try { side = std::stoi(raw.side); } catch (...) {}
+        int qty = 0;
+        try { qty = std::stoi(raw.qty); } catch (...) {}
+        double price = 0.0;
+        try { price = std::stod(raw.price); } catch (...) {}
 
-    if (raw.client_id.empty() || raw.instrument.empty() || raw.side.empty() || raw.qty.empty() || raw.price.empty()) {
-        is_valid = false;
-        reject_reason = "Missing required field";
-    }
-
-    if (is_valid) {
-        try {
-            side = std::stoi(raw.side);
-            qty = std::stoi(raw.qty);
-            price = std::stod(raw.price);
-        } catch (...) {
-            is_valid = false;
-            reject_reason = "Invalid format";
-        }
-    }
-
-    if (is_valid) {
-        if (raw.instrument != "Rose" && raw.instrument != "Lavender" && raw.instrument != "Lotus" && raw.instrument != "Tulip" && raw.instrument != "Orchid") {
-            is_valid = false;
-            reject_reason = "Invalid instrument";
-        } else if (side != 1 && side != 2) {
-            is_valid = false;
-            reject_reason = "Invalid side";
-        } else if (price <= 0) {
-            is_valid = false;
-            reject_reason = "Price must be greater than 0";
-        } else if (qty < 10 || qty > 1000) {
-            is_valid = false;
-            reject_reason = "Quantity outside range (10-1000)";
-        } else if (qty % 10 != 0) {
-            is_valid = false;
-            reject_reason = "Quantity not a multiple of 10";
-        }
-    }
-
-    std::string current_time = get_timestamp();
-
-    if (!is_valid) {
         Order rejected_order(raw.client_id, raw.instrument, side, qty, price);
         rejected_order.order_id = generate_order_id();
-        reports.push_back(ExecutionReport(rejected_order, 1, current_time, reject_reason));
+        reports.push_back(ExecutionReport(rejected_order, 1, get_timestamp(), reject_reason));
     } else {
-        Order new_order(raw.client_id, raw.instrument, side, qty, price);
+        Order new_order(raw.client_id, raw.instrument, std::stoi(raw.side), std::stoi(raw.qty), std::stod(raw.price));
         new_order.order_id = generate_order_id();
-        reports = order_books.at(raw.instrument)->process_incoming_order(new_order, current_time);
+        reports = order_books.at(raw.instrument)->process_incoming_order(new_order, get_timestamp());
     }
 
     return reports;

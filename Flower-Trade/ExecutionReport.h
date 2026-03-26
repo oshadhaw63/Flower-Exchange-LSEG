@@ -18,8 +18,7 @@ public:
 
     ExecutionReport(const Order& order, int exec_status, std::string time, std::string rej_reason = "");
 
-    // Serializes the object into a delimited string packet to send over TCP
     std::string serialize() const;
 };
 
-#endif // EXECUTION_REPORT_H
+#endif 

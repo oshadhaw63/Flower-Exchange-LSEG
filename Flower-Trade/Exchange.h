@@ -2,6 +2,7 @@
 #include "OrderBook.h"
 #include "ExecutionReport.h"
 #include "CSVReader.h"
+#include "OrderValidator.h"
 #include <string>
 #include <vector>
 #include <unordered_map>

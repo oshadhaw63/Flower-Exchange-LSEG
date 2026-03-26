@@ -46,6 +46,14 @@ function App() {
     socket.emit('submit_order', order);
   };
 
+  // NEW: Manual Reset Function
+  const handleManualReset = () => {
+    if (window.confirm("Are you sure you want to wipe the engine memory and clear all live reports?")) {
+      setReports([]); 
+      socket.emit('reset_engine'); 
+    }
+  };
+
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -152,6 +160,15 @@ function App() {
             </button>
           </div>
 
+          {/* NEW: System Controls */}
+          <div style={{...styles.card, borderColor: '#7f1d1d', backgroundColor: '#450a0a11'}}>
+            <h3 style={{...styles.cardTitle, color: '#f87171'}}>System Controls</h3>
+            <p style={styles.subtext}>Wipe engine memory and clear physical output file.</p>
+            <button onClick={handleManualReset} style={styles.dangerBtn}>
+              ⚠️ HARD RESET ENGINE
+            </button>
+          </div>
+
         </div>
 
         <div style={styles.tablePanel}>
@@ -228,6 +245,7 @@ const styles = {
   buyBtn: { padding: '12px', backgroundColor: '#10b981', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' },
   sellBtn: { padding: '12px', backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' },
   exportBtn: { padding: '12px', backgroundColor: '#3b82f6', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' },
+  dangerBtn: { padding: '12px', backgroundColor: 'transparent', color: '#f87171', border: '1px solid #f87171', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' },
   tableContainer: { overflowY: 'auto', flex: 1, paddingRight: '5px' },
   table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left' },
   thead: { position: 'sticky', top: 0, backgroundColor: '#1e293b', zIndex: 1 },
