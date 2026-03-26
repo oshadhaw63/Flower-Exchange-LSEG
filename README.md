@@ -1,141 +1,99 @@
-# 🌸 Flower Trade - High-Performance Trading Platform
+# Institutional Flower Exchange Platform
 
-A high-performance, full-stack trading platform built with a C++ matching engine, a Node.js WebSocket bridge, and a React frontend. The system processes real-time order matching, supports manual order entry, and features bulk CSV order processing with automated engine memory management.
+**LSEG Workshop Final Project - C++ Matching Engine & React UI**
 
-## 📋 Table of Contents
+This project is a high-performance, multithreaded order matching engine built in C++. It simulates a real-world financial exchange for trading flower commodities (Rose, Tulip, Orchid, Lotus, Lavender) and includes a full-stack web interface for live trading simulation.
 
-- [Architecture](#-architecture-monorepo)
-- [Prerequisites](#-prerequisites)
-- [Setup & Installation](#-setup--installation)
-- [Compiling the C++ Engine](#-compiling-the-c-engine)
-- [Running the Application](#-running-the-application)
-- [How to Use the Platform](#-how-to-use-the-platform)
+To demonstrate both high-throughput batch processing and low-latency network trading, this project features a **Decoupled Dual-Architecture**, allowing the engine to run in two distinct modes.
 
-## 🏗️ Architecture (Monorepo)
+---
 
-The project is structured as a monorepo containing the backend engine and the frontend UI:
+## ✨ Core Features
 
-```text
-📦 Master-Project-Folder
- ┣ 📂 Flower-Trade          # C++ Matching Engine (TCP Server)
- ┃ ┣ 📜 main.cpp
- ┃ ┣ 📜 ExchangeServer.cpp
- ┃ ┣ 📜 OrderBook.cpp
- ┃ ┗ 📜 ... (other C++ headers and files)
- ┣ 📂 Trader-UI             # Middleware & Frontend
- ┃ ┣ 📂 frontend            # React UI Dashboard (Vite)
- ┃ ┣ 📜 bridge.js           # Node.js TCP-to-WebSocket Bridge
- ┃ ┗ 📜 package.json        
- ┣ 📜 package.json          # Root package for 1-click start
- ┗ 📜 README.md
+*   **High-Performance Matching Logic:** The central matching engine (`Exchange` and `OrderBook`) is entirely decoupled from the I/O layers.
+*   **$O(1)$ Best-Price Lookups:** The Buy-Side order book utilizes a Red-Black Tree (`std::map` with a custom `std::greater<double>` comparator) to mathematically guarantee the highest bid is always instantly accessible.
+*   **Thread-Safe & Concurrent:** The engine uses `std::mutex` and `std::lock_guard` to prevent race conditions during concurrent network order processing.
+*   **Modern C++ Practices:** Employs `std::unique_ptr` for strict, leak-free memory management and follows SOLID principles for a clean, decoupled design.
+*   **Live Trading Dashboard:** A React frontend communicates via WebSockets to a Node.js bridge, which then streams raw TCP packets into the C++ engine for a real-world HFT simulation.
+
+---
+
+## 📂 Project Structure
+
+```
+📁 LSEG Final Project/
+├── 📁 Flower-Trade/            # The C++ Core Engine
+│   ├── Exchange.cpp / .h       # Engine routing and initialization
+│   ├── OrderBook.cpp / .h      # The Red-Black tree matching logic
+│   ├── main.cpp                # Entry point for Mode 1 (CLI)
+│   ├── main_server.cpp         # Entry point for Mode 2 (TCP GUI Server)
+│   └── ... (Data models & interfaces)
+├── 📁 Trader-UI/               # The Web Interface
+│   ├── bridge.js               # Node.js WebSocket-to-TCP translator
+│   └── 📁 frontend/            # React dashboard source code
+├── package.json                # Master startup script (npm run dev)
+└── README.md                   # This file
 ```
 
-## 📋 Prerequisites
+---
 
-Before running the project, ensure you have the following installed:
+## 🛠️ Prerequisites
 
-- **Node.js & npm** — For the React UI and Node Bridge
-- **C++ Compiler (MinGW/GCC)** — For compiling the matching engine
-- **Git** — For version control
+Before you begin, ensure you have the following installed:
+*   **C++ Compiler:** `g++` (MinGW on Windows) or any other standard C++ compiler.
+*   **Node.js:** Required for the Trader UI and the WebSocket-to-TCP bridge.
 
-## 🚀 Setup & Installation
+---
 
-### 1. Clone the Repository
+## ⚙️ Setup & Compilation
 
-```bash
-git clone <your-repo-url>
-cd <your-master-folder>
-```
+### 1. C++ Engine Compilation
 
-### 2. Install Root Dependencies
+Open your terminal in the `Flower-Trade` directory and run the following commands to build the two required executables.
 
-This installs concurrently to run everything together.
+*   **Build the CLI Executable (for automated grading):**
+    ```bash
+    g++ main.cpp Exchange.cpp OrderBook.cpp Order.cpp ExecutionReport.cpp CSVReader.cpp CSVWriter.cpp OrderValidator.cpp -o flower_cli.exe
+    ```
 
+*   **Build the GUI TCP Server (for live network simulation):**
+    ```bash
+    g++ main_server.cpp Exchange.cpp OrderBook.cpp Order.cpp ExecutionReport.cpp OrderValidator.cpp -o flower_gui.exe -lws2_32
+    ```
+    *(Note: The `-lws2_32` flag links the Windows Socket API, which is required for the TCP server).*
+
+### 2. Web Interface Setup
+
+Navigate to the project's root directory (`LSEG final project`) and install the necessary Node.js packages:
 ```bash
 npm install
 ```
 
-### 3. Install Frontend Dependencies
+---
 
-Navigate to the React folder and install the UI packages.
+## 🚀 Running the Project
 
-```bash
-cd Trader-UI/frontend
-npm install
-cd ../..
-```
+You can run the engine in two different modes.
 
-## 🛠️ Compiling the C++ Engine
+### Mode 1: Automated Evaluation (CLI)
 
-Whenever you make changes to the C++ code, you must recompile the engine.
+This mode is designed for high-throughput batch processing and is used for the automated LSEG grading scripts. It bypasses all networking for maximum performance.
 
-1. Open a terminal and navigate to the Flower-Trade folder:
+1.  Ensure a valid `orders.csv` file is present in the `Flower-Trade` directory.
+2.  Run the CLI executable:
+    ```bash
+    cd Flower-Trade
+    .\flower_cli.exe
+    ```
+The engine will process the batch file and generate an `execution_rep.csv` in the same folder.
 
-```bash
-cd Flower-Trade
-```
+### Mode 2: Live Trading Simulation (GUI)
 
-2. Run the compilation command (includes the Windows socket library -lws2_32):
+This mode demonstrates a real-world High-Frequency Trading (HFT) environment.
 
-```bash
-g++ main.cpp ExchangeServer.cpp OrderBook.cpp Order.cpp ExecutionReport.cpp -o ExchangeServer.exe -lws2_32
-```
-
-3. Return to the root folder:
-
-```bash
-cd ..
-```
-
-## 🏃‍♂️ Running the Application
-
-You do not need to open multiple terminals. Thanks to the root package.json scripts, you can launch the entire stack (C++ Engine, Node Bridge, and React UI) with a single command.
-
-From the root master folder, run:
-
-```bash
-npm run dev
-```
-
-### Service Ports
-
-- **React UI** — http://localhost:5173 (automatically opens in your browser)
-- **C++ Engine** — TCP port 8080
-- **Node Bridge** — port 3001
-
-## 📖 How to Use the Platform
-
-### 1. Manual Order Entry
-
-Use the Manual Order Entry card on the left side of the dashboard.
-
-- Input a Client ID
-- Select an Instrument (e.g., Rose, Orchid)
-- Choose Buy/Sell
-- Set your Quantity and Price
-- Click Submit
-
-The execution report will instantly appear in the live table.
-
-### 2. Bulk CSV Upload
-
-You can upload a massive batch of orders using the Bulk Order Upload button.
-
-**Important:** Uploading a CSV automatically triggers a RESET command. The UI will clear, the C++ engine's memory will wipe, and the output.csv file will be overwritten to provide a clean test scenario.
-
-#### Expected Input CSV Format
-
-```csv
-Client ID,Instrument,Side,Quantity,Price
-user_1,Rose,1,100,55.00
-user_2,Rose,2,50,54.00
-user_3,Orchid,1,200,105.50
-```
-
-**Note:** Side 1 is Buy, Side 2 is Sell
-
-### 3. Exporting Results
-
-The C++ engine automatically writes all execution reports safely to `Flower-Trade/output.csv` on your hard drive.
-
-You can also click the Download output.csv button in the UI to instantly download the results directly from your browser.
+1.  Navigate to the project's root directory (`LSEG final project`).
+2.  Boot the entire stack (C++ Engine, Node Bridge, and React UI) with a single command:
+    ```bash
+    npm run dev
+    ```
+A browser window will open automatically with the trading dashboard. You can now submit manual orders or upload CSV files directly through the interface. All trades will be logged live in the UI and the `execution_rep.csv` file simultaneously.
