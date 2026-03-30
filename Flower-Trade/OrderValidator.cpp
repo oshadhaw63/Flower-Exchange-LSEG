@@ -30,17 +30,17 @@ bool OrderValidator::isValid(const RawOrder& raw, std::string& reject_reason) {
     }
     
     if (price <= 0) {
-        reject_reason = "Price must be greater than 0";
+        reject_reason = "Invalid price";
         return false;
     }
     
     if (qty < 10 || qty > 1000) {
-        reject_reason = "Quantity outside range (10-1000)";
+        reject_reason = "Invalid size";
         return false;
     }
     
     if (qty % 10 != 0) {
-        reject_reason = "Quantity not a multiple of 10";
+        reject_reason = "Invalid size";
         return false;
     }
 

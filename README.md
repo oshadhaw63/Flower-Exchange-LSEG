@@ -95,13 +95,13 @@ You can run the engine in two different modes.
 
 This mode is designed for high-throughput batch processing and is used for the automated LSEG grading scripts. It bypasses all networking for maximum performance.
 
-1.  Ensure a valid `orders.csv` file is present in the `Flower-Trade` directory.
-2.  Run the CLI executable:
+1.  Place any order CSV file (e.g., `my_orders.csv`) into the `Flower-Trade` directory.
+2.  Run the CLI executable, passing the name of your file as a command-line argument:
     ```bash
     cd Flower-Trade
-    ./flower_cli.exe
+    ./flower_cli.exe my_orders.csv
     ```
-The engine will process the batch file and generate an `execution_rep.csv` in the same folder.
+The engine will process the batch file and generate a corresponding `my_orders_execution_rep.csv` in the same folder. You can do this for any number of files.
 
 ### Mode 2: Live Trading Simulation (GUI)
 

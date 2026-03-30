@@ -1,0 +1,6 @@
+Order ID,Client ID,Instrument,Side,Execution Status,Quantity,Price,Reason,Transaction Time
+ord1,aa13,,1,Rejected,100,55.00,Missing required field,20260330-094429.198
+ord2,aa14,Rose,3,Rejected,100,65.00,Invalid side,20260330-094429.199
+ord3,aa15,Lavender,2,Rejected,101,1.00,Invalid size,20260330-094429.199
+ord4,aa16,Tulip,1,Rejected,100,-1.00,Invalid price,20260330-094429.199
+ord5,aa17,Orchid,1,Rejected,1000,-1.00,Invalid price,20260330-094429.199
