@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CSVREADER_H
+#define CSVREADER_H
 #include <string>
 #include <vector>
 

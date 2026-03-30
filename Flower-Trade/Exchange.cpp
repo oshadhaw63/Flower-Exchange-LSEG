@@ -25,13 +25,7 @@ std::string Exchange::get_timestamp() {
     return ss.str();
 }
 
-#include "OrderValidator.h"
-#include <chrono>
-#include <iomanip>
-#include <sstream>
 
-Exchange::Exchange() {
-// ... existing code ...
 std::vector<ExecutionReport> Exchange::process_order(const RawOrder& raw) {
     std::vector<ExecutionReport> reports;
     std::string reject_reason = "";

@@ -21,7 +21,7 @@ int main() {
         all_reports.insert(all_reports.end(), reports.begin(), reports.end());
     }
 
-    std::unique_ptr<IReportWriter> writer = std::make_unique<CSVWriter>("execution_rep.csv");
+    std::unique_ptr<IReportWriter> writer = std::make_unique<CSVWriter>(std::string("execution_rep.csv"));
     writer->write_reports(all_reports);
 
     auto end_time = std::chrono::high_resolution_clock::now();

@@ -4,21 +4,11 @@
 
 CSVWriter::CSVWriter(const std::string& file) : filename(file) {}
 
-// Copy constructor
-CSVWriter::CSVWriter(const CSVWriter& other) : filename(other.filename) {}
-
-// Copy assignment operator
-CSVWriter& CSVWriter::operator=(const CSVWriter& other) {
-    if (this != &other) {
-        filename = other.filename;
-    }
-    return *this;
-}
 
 // Destructor
 CSVWriter::~CSVWriter() {}
 
-void CSVWriter::write_reports(const std::vector<ExecutionReport>& reports) override {
+void CSVWriter::write_reports(const std::vector<ExecutionReport>& reports) {
     std::ofstream file(filename, std::ios::out | std::ios::trunc);
     if (!file.is_open()) return;
 

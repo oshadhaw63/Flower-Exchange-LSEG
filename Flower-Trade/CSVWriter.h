@@ -1,22 +1,14 @@
 #pragma once
+#include "InterfaceReportWriter.h"
 #include <string>
 #include <vector>
-#include "ExecutionReport.h"
 
-class CSVWriter {
-// Constructor
-    explicit CSVWriter(const std::string& file);
-
-    // Copy constructor and assignment (Rule of Three)
-    CSVWriter(const CSVWriter& other);
-    CSVWriter& operator=(const CSVWriter& other);
-
-    // Destructor
-    ~CSVWriter();
-
+class CSVWriter : public IReportWriter {
 private:
     std::string filename;
 public:
-    CSVWriter(std::string file);
-    void write_reports(const std::vector<ExecutionReport>& reports);
+    explicit CSVWriter(const std::string& file);
+    ~CSVWriter() override;
+
+    void write_reports(const std::vector<ExecutionReport>& reports) override;
 };

@@ -64,10 +64,26 @@ Open your terminal in the `Flower-Trade` directory and run the following command
 
 ### 2. Web Interface Setup
 
-Navigate to the project's root directory (`LSEG final project`) and install the necessary Node.js packages:
-```bash
-npm install
-```
+There are three separate `package.json` files that need their dependencies installed. Run these commands from the **main project root** (`LSEG final project`).
+
+*   **Install Master Controller Dependencies:**
+    ```bash
+    npm install concurrently
+    ```
+
+*   **Install Node.js Bridge Dependencies:**
+    ```bash
+    cd Trader-UI
+    npm install express socket.io cors
+    cd ..
+    ```
+
+*   **Install React Frontend Dependencies:**
+    ```bash
+    cd Trader-UI/frontend
+    npm install
+    cd ../..
+    ```
 
 ---
 
@@ -83,16 +99,16 @@ This mode is designed for high-throughput batch processing and is used for the a
 2.  Run the CLI executable:
     ```bash
     cd Flower-Trade
-    .\flower_cli.exe
+    ./flower_cli.exe
     ```
 The engine will process the batch file and generate an `execution_rep.csv` in the same folder.
 
 ### Mode 2: Live Trading Simulation (GUI)
 
-This mode demonstrates a real-world High-Frequency Trading (HFT) environment.
+This mode demonstrates a real-world High-Frequency Trading (HFT) environment. It boots the C++ TCP Server, the Node.js WebSocket bridge, and the React web dashboard all at once.
 
 1.  Navigate to the project's root directory (`LSEG final project`).
-2.  Boot the entire stack (C++ Engine, Node Bridge, and React UI) with a single command:
+2.  Boot the entire stack with a single command:
     ```bash
     npm run dev
     ```
