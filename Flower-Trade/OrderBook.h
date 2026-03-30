@@ -5,11 +5,12 @@
 #include <map>
 #include <queue>
 #include <vector>
-#include <mutex> // NEW: The thread-safety locking mechanism
+// #include <mutex> // Disabled due to MinGW compatibility issues
 #include "Order.h"
 #include "ExecutionReport.h"
 
-class OrderBook {
+class OrderBook
+{
 private:
     std::string instrument_name;
 
@@ -17,12 +18,12 @@ private:
     std::map<double, std::queue<Order>, std::greater<double>> buy_side;
     std::map<double, std::queue<Order>> sell_side;
 
-    // The Lock
-    std::mutex book_lock;
+    // The Lock - Simplified version without std::mutex
+    // std::mutex book_lock;
 
 public:
     explicit OrderBook(std::string inst);
-    
+
     // Default constructor
     OrderBook();
 

@@ -10,15 +10,15 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 const tcpClient = new net.Socket();
-tcpClient.connect(8080, '127.0.0.1', () => {
-    console.log('Connected to C++ Exchange Engine on TCP 8080');
+tcpClient.connect(8888, '127.0.0.1', () => {
+    console.log('Connected to C++ Exchange Engine on TCP 8888');
 });
 
 tcpClient.on('data', (data) => {
     const packets = data.toString().trim().split('\n');
     packets.forEach(packet => {
         if (packet) {
-            io.emit('execution_report', packet); 
+            io.emit('execution_report', packet);
         }
     });
 });
@@ -27,7 +27,7 @@ tcpClient.on('error', (err) => console.error('TCP Error:', err.message));
 
 io.on('connection', (socket) => {
     console.log('React Frontend Connected');
-    
+
     socket.on('reset_engine', () => {
         tcpClient.write("RESET\n");
     });

@@ -2,14 +2,16 @@
 #include <fstream>
 #include <iomanip>
 
-CSVWriter::CSVWriter(const std::string& file) : filename(file) {}
+CSVWriter::CSVWriter(const std::string &file) : filename(file) {}
 
 // Copy constructor
-CSVWriter::CSVWriter(const CSVWriter& other) : filename(other.filename) {}
+CSVWriter::CSVWriter(const CSVWriter &other) : filename(other.filename) {}
 
 // Copy assignment operator
-CSVWriter& CSVWriter::operator=(const CSVWriter& other) {
-    if (this != &other) {
+CSVWriter &CSVWriter::operator=(const CSVWriter &other)
+{
+    if (this != &other)
+    {
         filename = other.filename;
     }
     return *this;
@@ -18,18 +20,25 @@ CSVWriter& CSVWriter::operator=(const CSVWriter& other) {
 // Destructor
 CSVWriter::~CSVWriter() {}
 
-void CSVWriter::write_reports(const std::vector<ExecutionReport>& reports) override {
+void CSVWriter::write_reports(const std::vector<ExecutionReport> &reports)
+{
     std::ofstream file(filename, std::ios::out | std::ios::trunc);
-    if (!file.is_open()) return;
+    if (!file.is_open())
+        return;
 
     file << "Order ID,Client ID,Instrument,Side,Execution Status,Quantity,Price,Reason,Transaction Time\n";
 
-    for (const auto& rep : reports) {
+    for (const auto &rep : reports)
+    {
         std::string status_str;
-        if (rep.status == 0) status_str = "New";
-        else if (rep.status == 1) status_str = "Rejected";
-        else if (rep.status == 2) status_str = "Fill";
-        else if (rep.status == 3) status_str = "Pfill";
+        if (rep.status == 0)
+            status_str = "New";
+        else if (rep.status == 1)
+            status_str = "Rejected";
+        else if (rep.status == 2)
+            status_str = "Fill";
+        else if (rep.status == 3)
+            status_str = "Pfill";
 
         file << rep.order_id << ","
              << rep.client_order_id << ","

@@ -1,1 +1,6 @@
 Order ID,Client ID,Instrument,Side,Execution Status,Quantity,Price,Reason,Transaction Time
+ord1,aa13, ,1,Rejected,100,55.00,Invalid instrument,20260330-072354.204
+ord2,aa14,Rose,3,Rejected,100,65.00,Invalid side,20260330-072354.204
+ord3,aa15,Lavender,2,Rejected,101,1.00,Quantity not a multiple of 10,20260330-072354.204
+ord4,aa16,Tulip,1,Rejected,100,-1.00,Price must be greater than 0,20260330-072354.204
+ord5,aa17,Orchid,1,Rejected,1000,-1.00,Price must be greater than 0,20260330-072354.204

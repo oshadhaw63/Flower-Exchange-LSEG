@@ -7,7 +7,7 @@ function App() {
   const [reports, setReports] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
   const tableEndRef = useRef(null);
-  
+
   const [order, setOrder] = useState({
     clientId: 'user_123',
     instrument: 'Rose',
@@ -49,8 +49,8 @@ function App() {
   // NEW: Manual Reset Function
   const handleManualReset = () => {
     if (window.confirm("Are you sure you want to wipe the engine memory and clear all live reports?")) {
-      setReports([]); 
-      socket.emit('reset_engine'); 
+      setReports([]);
+      socket.emit('reset_engine');
     }
   };
 
@@ -65,28 +65,28 @@ function App() {
     reader.onload = (event) => {
       const lines = event.target.result.split('\n').filter(line => line.trim() !== '');
       const startIndex = lines[0].toLowerCase().includes('client') ? 1 : 0;
-      
+
       for (let i = startIndex; i < lines.length; i++) {
         const [clientId, instrument, side, qty, price] = lines[i].split(',');
         if (clientId && instrument && side && qty && price) {
-          socket.emit('submit_order', { 
-            clientId: clientId.trim(), 
-            instrument: instrument.trim(), 
-            side: side.trim(), 
-            qty: qty.trim(), 
-            price: price.trim() 
+          socket.emit('submit_order', {
+            clientId: clientId.trim(),
+            instrument: instrument.trim(),
+            side: side.trim(),
+            qty: qty.trim(),
+            price: price.trim()
           });
         }
       }
     };
     reader.readAsText(file);
-    e.target.value = null; 
+    e.target.value = null;
   };
 
   const downloadCSV = () => {
     if (reports.length === 0) return;
     const header = "Order ID,Client ID,Instrument,Side,Execution Status,Quantity,Price,Reason,Transaction Time\n";
-    const csvContent = reports.map(r => 
+    const csvContent = reports.map(r =>
       `${r.orderId},${r.clId},${r.inst},${r.side},${r.status},${r.qty},${r.price},${r.reason},${r.time}`
     ).join('\n');
 
@@ -111,7 +111,7 @@ function App() {
 
       <div style={styles.dashboard}>
         <div style={styles.controlPanel}>
-          
+
           <div style={styles.card}>
             <h3 style={styles.cardTitle}>Manual Order Entry</h3>
             <form onSubmit={handleManualSubmit} style={styles.form}>
@@ -132,11 +132,11 @@ function App() {
                 </select>
               </div>
               <div style={styles.row}>
-                <div style={{...styles.inputGroup, flex: 1}}>
+                <div style={{ ...styles.inputGroup, flex: 1 }}>
                   <label style={styles.label}>Qty</label>
                   <input name="qty" type="number" value={order.qty} onChange={handleInputChange} style={styles.input} />
                 </div>
-                <div style={{...styles.inputGroup, flex: 1}}>
+                <div style={{ ...styles.inputGroup, flex: 1 }}>
                   <label style={styles.label}>Price ($)</label>
                   <input name="price" type="number" step="0.01" value={order.price} onChange={handleInputChange} style={styles.input} />
                 </div>
@@ -164,8 +164,8 @@ function App() {
           </div>
 
           {/* NEW: System Controls */}
-          <div style={{...styles.card, borderColor: '#7f1d1d', backgroundColor: '#450a0a11'}}>
-            <h3 style={{...styles.cardTitle, color: '#f87171'}}>System Controls</h3>
+          <div style={{ ...styles.card, borderColor: '#7f1d1d', backgroundColor: '#450a0a11' }}>
+            <h3 style={{ ...styles.cardTitle, color: '#f87171' }}>System Controls</h3>
             <p style={styles.subtext}>Wipe engine memory and clear physical output file.</p>
             <button onClick={handleManualReset} style={styles.dangerBtn}>
               ⚠️ HARD RESET ENGINE
@@ -196,8 +196,8 @@ function App() {
                     <tr key={i} style={styles.tr}>
                       <td style={styles.td}>{r.orderId}</td>
                       <td style={styles.td}>{r.clId}</td>
-                      <td style={{...styles.td, fontWeight: 'bold'}}>{r.inst}</td>
-                      <td style={{...styles.td, color: r.side === '1' ? '#10b981' : '#ef4444'}}>
+                      <td style={{ ...styles.td, fontWeight: 'bold' }}>{r.inst}</td>
+                      <td style={{ ...styles.td, color: r.side === '1' ? '#10b981' : '#ef4444' }}>
                         {r.side === '1' ? 'BUY' : 'SELL'}
                       </td>
                       <td style={styles.td}>
@@ -205,7 +205,7 @@ function App() {
                       </td>
                       <td style={styles.td}>{r.qty}</td>
                       <td style={styles.td}>${r.price}</td>
-                      <td style={{...styles.td, color: '#94a3b8', fontSize: '0.85rem'}}>{r.time}</td>
+                      <td style={{ ...styles.td, color: '#94a3b8', fontSize: '0.85rem' }}>{r.time}</td>
                     </tr>
                   ))}
                   <tr ref={tableEndRef} />
