@@ -4,10 +4,8 @@
 
 CSVReader::CSVReader(const std::string& file) : filename(file) {}
 
-// Copy constructor
 CSVReader::CSVReader(const CSVReader& other) : filename(other.filename) {}
 
-// Copy assignment operator
 CSVReader& CSVReader::operator=(const CSVReader& other) {
     if (this != &other) {
         filename = other.filename;
@@ -15,7 +13,6 @@ CSVReader& CSVReader::operator=(const CSVReader& other) {
     return *this;
 }
 
-// Destructor
 CSVReader::~CSVReader() {}
 
 std::vector<RawOrder> CSVReader::read_orders() const {

@@ -8,7 +8,6 @@
     "dev": "concurrently -k \"npm run start:engine\" \"npm run start:bridge\" \"npm run start:ui\""
   },
   "dependencies": {
-    "concurrently": "^8.2.2",
-    "express": "^5.2.1"
+    "concurrently": "^8.2.2"
   }
 }
